@@ -62,4 +62,37 @@ public class LoginController {
         
         return mv;
     }
+
+    @Get
+    @Url("front_login")
+    public ModelView loginPageFront() {
+        ModelView mv = new ModelView();
+        mv.setUrl("front_login.jsp");
+        return mv;
+    }
+
+    @Post
+    @Url("front_login_post")
+    public ModelView loginFront(@Param(name = "login") String login, 
+                          @Param(name = "mdp") String mdp, 
+                          MySession session) {
+        ModelView mv = new ModelView();
+        try {
+            User user = User.login(login, mdp, "user");    
+            if (user != null) {
+                session.add("id", user.getId());
+                session.add("login", user.getLogin());
+                session.add("ROLE-USER", user.getRole());                
+                session.add("nom", user.getNom());
+                mv.setUrl("front_vol_search_form");                
+            } else {
+                mv.setUrl("front_login.jsp");
+                mv.addObject("error", "Invalid login credentials");
+            }
+        } catch (Exception e) {
+            mv.setUrl("front_login.jsp");
+            mv.addObject("error", e.getMessage());
+        }
+        return mv;
+    }
 }
