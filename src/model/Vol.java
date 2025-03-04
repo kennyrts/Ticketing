@@ -8,15 +8,34 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 import dbconnect.UtilDB;
+import mg.itu.prom16.annotations.FormField;
+import mg.itu.prom16.annotations.validation.Min;
+import mg.itu.prom16.annotations.validation.Required;
 
 public class Vol {
     private int id;
+
+    @FormField(name = "avion_id")
     private int avionId;
+
+    @FormField(name = "ville_depart_id")
     private int villeDepartId;
+
+    @FormField(name = "ville_arrivee_id")
     private int villeArriveeId;
+
+    @FormField(name = "heure_depart")
+    @Required(message = "Departure time is required")
     private Timestamp heureDepart;
+
+    @FormField(name = "heures_avant_reservation")
+    @Min(value = 0, message = "Hours before reservation must be positive")
     private int heuresAvantReservation;
+
+    @FormField(name = "heures_avant_annulation")
+    @Min(value = 0, message = "Hours before cancellation must be positive")
     private int heuresAvantAnnulation;
+
     private String avionModele;
     private String villeDepartNom;
     private String villeArriveeNom;

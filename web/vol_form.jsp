@@ -4,6 +4,7 @@
 <%@ page import="model.Avion" %>
 <%@ page import="model.Vol" %>
 <%@ page import="java.text.SimpleDateFormat" %>
+<%@ page import="java.util.Map" %>
 <!DOCTYPE html>
 <html>
 <head>
@@ -101,8 +102,12 @@
         }
         
         .error-message {
-            color: red;
-            margin-bottom: 15px;
+            color: #d32f2f;
+            padding: 10px;
+            margin-bottom: 20px;
+            border: 1px solid #d32f2f;
+            border-radius: 4px;
+            background-color: #ffebee;
         }
 
         .success-message {
@@ -158,6 +163,12 @@
         .logout-btn:hover {
             background-color: #d32f2f;
         }
+
+        .field-error {
+            color: #d32f2f;
+            font-size: 0.9em;
+            margin-bottom: 5px;
+        }
     </style>
 </head>
 <body>
@@ -189,6 +200,14 @@
                 <div class="error-message">
                     <%= request.getAttribute("error") %>
                 </div>
+                <% 
+                    Map<String, List<String>> errors = (Map<String, List<String>>) request.getAttribute("errors");
+                    for (Map.Entry<String, List<String>> entry : errors.entrySet()) {
+                %>
+                    <div class="field-error">
+                        <%= entry.getKey() %>: <%= String.join(", ", entry.getValue()) %>
+                    </div>
+                <% } %>
             <% } %>
 
             <% if (request.getAttribute("success") != null) { %>
@@ -199,11 +218,15 @@
 
             <%
                 Vol vol = (Vol) request.getAttribute("vol");
+                Map<String, Object> submittedValues = (Map<String, Object>) request.getAttribute("submittedValues");
                 String formAction = vol != null ? "vol_update" : "vol_create";
                 
                 // Format datetime for the input field if editing
                 String departureDatetime = "";
-                if (vol != null && vol.getHeureDepart() != null) {
+                if (submittedValues != null && submittedValues.get("heureDepart") != null) {
+                    SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm");
+                    departureDatetime = sdf.format(submittedValues.get("heureDepart"));
+                } else if (vol != null && vol.getHeureDepart() != null) {
                     SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm");
                     departureDatetime = sdf.format(vol.getHeureDepart());
                 }
@@ -222,9 +245,15 @@
                         List<Avion> avions = (List<Avion>) request.getAttribute("avions");
                         if (avions != null) {
                             for (Avion avion : avions) {
+                                boolean isSelected = false;
+                                if (submittedValues != null) {
+                                    isSelected = avion.getId() == (int)submittedValues.get("avionId");
+                                } else if (vol != null) {
+                                    isSelected = avion.getId() == vol.getAvionId();
+                                }
                         %>
                             <option value="<%= avion.getId() %>" 
-                                    <%= (vol != null && vol.getAvionId() == avion.getId()) ? "selected" : "" %>>
+                                    <%= isSelected ? "selected" : "" %>>
                                 <%= avion.getModele() %> (<%= avion.getDateFabrication() %>)
                             </option>
                         <%
@@ -242,9 +271,15 @@
                         List<Ville> villes = (List<Ville>) request.getAttribute("villes");
                         if (villes != null) {
                             for (Ville ville : villes) {
+                                boolean isSelected = false;
+                                if (submittedValues != null) {
+                                    isSelected = ville.getId() == (int)submittedValues.get("villeDepartId");
+                                } else if (vol != null) {
+                                    isSelected = ville.getId() == vol.getVilleDepartId();
+                                }
                         %>
                             <option value="<%= ville.getId() %>"
-                                    <%= (vol != null && vol.getVilleDepartId() == ville.getId()) ? "selected" : "" %>>
+                                    <%= isSelected ? "selected" : "" %>>
                                 <%= ville.getNom() %>
                             </option>
                         <%
@@ -282,13 +317,15 @@
                 <div class="form-group">
                     <label for="heures_avant_reservation">Hours Before Reservation Deadline:</label>
                     <input type="number" id="heures_avant_reservation" name="heures_avant_reservation" 
-                           min="1" value="<%= vol != null ? vol.getHeuresAvantReservation() : "" %>" required>
+                            value="<%= submittedValues != null ? submittedValues.get("heuresAvantReservation") : 
+                                     (vol != null ? vol.getHeuresAvantReservation() : "") %>" required>
                 </div>
 
                 <div class="form-group">
                     <label for="heures_avant_annulation">Hours Before Cancellation Deadline:</label>
                     <input type="number" id="heures_avant_annulation" name="heures_avant_annulation" 
-                           min="1" value="<%= vol != null ? vol.getHeuresAvantAnnulation() : "" %>" required>
+                            value="<%= submittedValues != null ? submittedValues.get("heuresAvantAnnulation") : 
+                                     (vol != null ? vol.getHeuresAvantAnnulation() : "") %>" required>
                 </div>
 
                 <button type="submit" class="submit-btn">
