@@ -14,6 +14,7 @@ import model.Vol;
 import model.VolTypeSiege;
 import java.util.List;
 import model.VolSearch;
+import mg.itu.prom16.annotations.FormObject;
 
 @Controller
 @Auth("admin")
@@ -34,24 +35,18 @@ public class BackOfficeController {
 
     @Post
     @Url("vol_create")
-    public ModelView createVol(@Param(name = "avion_id") String avionId,
-                              @Param(name = "ville_depart_id") String villeDepartId,
-                              @Param(name = "ville_arrivee_id") String villeArriveeId,
-                              @Param(name = "heure_depart") String heureDepart,
-                              @Param(name = "heures_avant_reservation") String heuresAvantReservation,
-                              @Param(name = "heures_avant_annulation") String heuresAvantAnnulation) {
+    public ModelView createVol(@FormObject Vol vol) {
         ModelView mv = new ModelView();
         try {
-            // Convert parameters
-            int avId = Integer.parseInt(avionId);
-            int depId = Integer.parseInt(villeDepartId);
-            int arrId = Integer.parseInt(villeArriveeId);
-            Timestamp depTime = Timestamp.valueOf(heureDepart.replace("T", " ") + ":00");
-            int resHours = Integer.parseInt(heuresAvantReservation);
-            int cancelHours = Integer.parseInt(heuresAvantAnnulation);
-
             // Insert the flight
-            int volId = Vol.insert(avId, depId, arrId, depTime, resHours, cancelHours);
+            int volId = Vol.insert(
+                vol.getAvionId(), 
+                vol.getVilleDepartId(), 
+                vol.getVilleArriveeId(), 
+                vol.getHeureDepart(), 
+                vol.getHeuresAvantReservation(), 
+                vol.getHeuresAvantAnnulation()
+            );
 
             // Redirect back to form with success message
             mv.setUrl("vol_form");
@@ -64,7 +59,6 @@ public class BackOfficeController {
                 mv.addObject("villes", Ville.getAll());
                 mv.addObject("avions", Avion.getAll());
             } catch (Exception ex) {
-                // Log this error but don't show to user since we already have an error message
                 ex.printStackTrace();
             }
         }
