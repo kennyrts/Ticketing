@@ -202,6 +202,24 @@
         .reserve-btn:hover {
             background-color: #45a049;
         }
+        
+        .form-group {
+            margin: 10px 0;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 0.9em;
+            color: #666;
+        }
+        
+        .form-group input[type="file"] {
+            width: 100%;
+            padding: 5px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
     </style>
 </head>
 <body>
@@ -261,12 +279,16 @@
                         <div class="original-price"><%= String.format("%.2f", vol.getPrix()) %> €</div>
                         <div class="promo-tag"><%= String.format("%.0f", vol.getPourcentagePromo()) %>% OFF</div>
                     <% } %>
-                    <form action="front_vol_reserver" method="post">
+                    <form action="front_vol_reserver" method="post" enctype="multipart/form-data">
                         <input type="hidden" name="vol_type_siege_id" value="<%= vol.getVolTypeSiegeId() %>">
                         <input type="hidden" name="vol_id" value="<%= vol.getVolId() %>">
                         <input type="hidden" name="type_siege_id" value="<%= vol.getTypeSiegeId() %>">
                         <input type="hidden" name="prix" value="<%= vol.getPrixActuel() %>">
                         <input type="hidden" name="est_promo" value="<%= hasPromo %>">
+                        <div class="form-group">
+                            <label for="photo">Boarding Pass/ID (optional):</label>
+                            <input type="file" name="photo" id="photo" accept="image/*">
+                        </div>
                         <button type="submit" class="reserve-btn">Book Now</button>
                     </form>
                 </div>

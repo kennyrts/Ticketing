@@ -205,10 +205,14 @@
             color: #666;
             font-size: 1.2em;
         }
+        
+        .reservation-photo {
+            margin-top: 10px;
+        }
     </style>
 </head>
-<body>
-    <div class="sidebar">
+<body>    
+    <div class="sidebar">        
         <div class="sidebar-header">
             <h2>User Panel</h2>
         </div>
@@ -252,6 +256,12 @@
                     <div>Booked on: <%= sdf.format(res.getDateReservation()) %></div>
                     <% if (res.isEstPromo()) { %>
                         <div class="promo-tag">Promo Fare</div>
+                    <% } %>
+                    <% if (res.getPhoto() != null) { %>
+                        <div class="reservation-photo">
+                            <img src="<%= res.getPhoto() %>" 
+                                alt="Boarding Pass/ID" style="max-width: 200px; margin-top: 10px;">
+                        </div>
                     <% } %>
                 </div>
                 

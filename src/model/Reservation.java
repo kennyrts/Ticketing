@@ -27,6 +27,7 @@ public class Reservation {
     // Add to class attributes
     private boolean estAnnulable;
     private Timestamp limiteAnnulation;
+    private String photo;
 
     // Constructors
     public Reservation() {}
@@ -60,6 +61,8 @@ public class Reservation {
     public void setEstAnnulable(boolean estAnnulable) { this.estAnnulable = estAnnulable; }
     public Timestamp getLimiteAnnulation() { return limiteAnnulation; }
     public void setLimiteAnnulation(Timestamp limiteAnnulation) { this.limiteAnnulation = limiteAnnulation; }
+    public String getPhoto() { return photo; }
+    public void setPhoto(String photo) { this.photo = photo; }
 
     /**
      * Insert a new reservation
@@ -68,14 +71,15 @@ public class Reservation {
      * @param typeSiegeId Seat type ID
      * @param estPromo Is promotional seat
      * @param prix Price paid
+     * @param photo Photo URL
      * @return The ID of the newly inserted reservation
      * @throws Exception if insertion fails
      */
     public static int insert(int volId, int utilisateurId, int typeSiegeId, 
-                           boolean estPromo, double prix) throws Exception {
+                           boolean estPromo, double prix, String photo) throws Exception {
         String query = "INSERT INTO reservation (vol_id, utilisateur_id, type_siege_id, " +
-                      "est_promo, date_reservation, prix_paye) " +
-                      "VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP, ?) RETURNING id";
+                      "est_promo, date_reservation, prix_paye, photo) " +
+                      "VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP, ?, ?) RETURNING id";
 
         try (Connection connection = UtilDB.getConnection();
              PreparedStatement pstmt = connection.prepareStatement(query)) {
@@ -85,6 +89,7 @@ public class Reservation {
             pstmt.setInt(3, typeSiegeId);
             pstmt.setBoolean(4, estPromo);
             pstmt.setDouble(5, prix);
+            pstmt.setString(6, photo);
             
             try (ResultSet rs = pstmt.executeQuery()) {
                 if (rs.next()) {
@@ -108,7 +113,8 @@ public class Reservation {
             "vd.nom as ville_depart, va.nom as ville_arrivee, " +
             "ts.nom as type_siege, a.modele as avion, " +
             "(v.heure_depart - (v.heures_avant_annulation || ' hours')::interval) as limite_annulation, " +
-            "CURRENT_TIMESTAMP < (v.heure_depart - (v.heures_avant_annulation || ' hours')::interval) as est_annulable " +
+            "CURRENT_TIMESTAMP < (v.heure_depart - (v.heures_avant_annulation || ' hours')::interval) as est_annulable, " +
+            "r.photo " +
             "FROM reservation r " +
             "JOIN vol v ON r.vol_id = v.id " +
             "JOIN ville vd ON v.ville_depart_id = vd.id " +
@@ -144,6 +150,8 @@ public class Reservation {
                     // Update cancellation details
                     reservation.setLimiteAnnulation(rs.getTimestamp("limite_annulation"));
                     reservation.setEstAnnulable(rs.getBoolean("est_annulable"));
+                    
+                    reservation.setPhoto(rs.getString("photo"));
                     
                     reservations.add(reservation);
                 }

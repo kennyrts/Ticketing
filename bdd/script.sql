@@ -63,7 +63,8 @@ CREATE TABLE reservation (
     type_siege_id INTEGER REFERENCES type_siege(id),
     date_reservation TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     prix_paye DECIMAL(10,2) NOT NULL,
-    est_promo BOOLEAN NOT NULL DEFAULT FALSE
+    est_promo BOOLEAN NOT NULL DEFAULT FALSE,
+    photo VARCHAR(255)
 );
 
 CREATE OR REPLACE VIEW vol_details AS
