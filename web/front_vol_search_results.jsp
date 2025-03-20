@@ -220,6 +220,41 @@
             border: 1px solid #ddd;
             border-radius: 4px;
         }
+        
+        /* File input styling */
+        .file-input-container {
+            margin: 10px 0;
+        }
+        
+        .file-input-container label {
+            display: block;
+            margin-bottom: 5px;
+            color: #666;
+            font-size: 0.9em;
+        }
+        
+        .file-input-container input[type="file"] {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background-color: #fff;
+            font-size: 14px;
+        }
+        
+        .file-input-container input[type="file"]::-webkit-file-upload-button {
+            padding: 8px 16px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+        
+        .file-input-container input[type="file"]::-webkit-file-upload-button:hover {
+            background-color: #45a049;
+        }
     </style>
 </head>
 <body>
@@ -285,9 +320,10 @@
                         <input type="hidden" name="type_siege_id" value="<%= vol.getTypeSiegeId() %>">
                         <input type="hidden" name="prix" value="<%= vol.getPrixActuel() %>">
                         <input type="hidden" name="est_promo" value="<%= hasPromo %>">
-                        <div class="form-group">
+                        <div class="file-input-container">
                             <label for="photo">Boarding Pass/ID (optional):</label>
-                            <input type="file" name="photo" id="photo" accept="image/*">
+                            <input type="file" name="photo" id="photo" accept="image/*" 
+                                    title="Choose a file">
                         </div>
                         <button type="submit" class="reserve-btn">Book Now</button>
                     </form>
