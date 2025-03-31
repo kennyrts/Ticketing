@@ -20,6 +20,7 @@ import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.util.Base64;
+import model.Enfant;
 
 @Controller
 @Auth("user")
@@ -76,63 +77,69 @@ public class FrontOfficeController {
 
     @Post
     @Url("front_vol_reserver")
-    public ModelView reserver(@Param(name = "vol_type_siege_id") String volTypeSiegeId,
-                            @Param(name = "vol_id") String volId,
-                            @Param(name = "type_siege_id") String typeSiegeId,
-                            @Param(name = "prix") String prix,
-                            @Param(name = "est_promo") String estPromo,
-                            @FileUpload(name = "photo") UploadedFile photo,
-                            MySession session) {
+    public ModelView reserverVol(@Param(name = "vol_type_siege_id") String volTypeSiegeId,
+                                @Param(name = "vol_id") String volId,
+                                @Param(name = "type_siege_id") String typeSiegeId,
+                                @Param(name = "prix") String prixStr,
+                                @Param(name = "est_promo") String estPromoStr,
+                                @Param(name = "age") String ageStr,
+                                @FileUpload(name = "photo") UploadedFile photo,
+                                MySession session) {
         ModelView mv = new ModelView();
+        
         try {
-            // Get user ID from session
             int userId = (int) session.get("id");
+            int volIdInt = Integer.parseInt(volId);
+            int typeSiegeIdInt = Integer.parseInt(typeSiegeId);
+            double prix = Double.parseDouble(prixStr);
+            boolean estPromo = Boolean.parseBoolean(estPromoStr);
+            int age = Integer.parseInt(ageStr);
             
-            // Handle file upload
+            // Appliquer la réduction enfant si applicable
+            Enfant regleEnfant = Enfant.getCurrentRule();
+            if (regleEnfant != null && age <= regleEnfant.getAgeMax()) {
+                // Calculer le nouveau prix avec la réduction enfant
+                double reductionEnfant = regleEnfant.getReduction() / 100.0;
+                prix = prix * (1 - reductionEnfant);
+            }
+            
+            // Traiter la photo si elle existe
             String photoPath = null;
-            if (photo != null && !photo.getFileName().isEmpty()) {
+            if (photo != null && photo.getSize() > 0) {
+                // Générer un nom de fichier unique
                 String fileName = System.currentTimeMillis() + "_" + photo.getFileName();
-                // Create directories if they don't exist
-                File uploadDir = new File("uploads/reservations");
-                if (!uploadDir.exists()) {
-                    uploadDir.mkdirs();
+                String uploadDir = "D:/uploads/";
+                
+                // Créer le répertoire s'il n'existe pas
+                File uploadDirFile = new File(uploadDir);
+                if (!uploadDirFile.exists()) {
+                    uploadDirFile.mkdirs();
                 }
                 
-                // Save the file using InputStream
-                File destFile = new File(uploadDir, fileName);
-                try (InputStream in = photo.getInputStream();
-                     FileOutputStream out = new FileOutputStream(destFile)) {
-                    byte[] buffer = new byte[1024];
-                    int length;
-                    while ((length = in.read(buffer)) > 0) {
-                        out.write(buffer, 0, length);
+                // Enregistrer le fichier
+                try (FileOutputStream fos = new FileOutputStream(uploadDir + fileName)) {
+                    byte[] buffer = new byte[8192];
+                    int bytesRead;
+                    InputStream is = photo.getInputStream();
+                    while ((bytesRead = is.read(buffer)) != -1) {
+                        fos.write(buffer, 0, bytesRead);
                     }
+                    photoPath = fileName;
                 }
-                photoPath = "reservations/" + fileName;
             }
             
-            // Convert parameters
-            int vtsId = Integer.parseInt(volTypeSiegeId);
-            int vId = Integer.parseInt(volId);
-            int tsId = Integer.parseInt(typeSiegeId);
-            double price = Double.parseDouble(prix);
-            boolean isPromo = Boolean.parseBoolean(estPromo);
-
-            // Create reservation
-            int reservationId = Reservation.insert(vId, userId, tsId, isPromo, price, photoPath);
-
-            // Redirect to success page or reservations list
+            // Insérer la réservation
+            Reservation.insert(volIdInt, userId, typeSiegeIdInt, estPromo, prix, photoPath);
+            
             mv.setUrl("front_reservations");
-            mv.addObject("success", "Flight booked successfully!");
+            mv.addObject("success", "Réservation effectuée avec succès!");
+            
         } catch (Exception e) {
-            mv.setUrl("front_vol_search_form");
-            mv.addObject("error", "Failed to book flight: " + e.getMessage());
-            try {
-                mv.addObject("villes", Ville.getAll());
-            } catch (Exception ex) {
-                ex.printStackTrace();
-            }
+            e.printStackTrace();
+            mv.setUrl("front_vol_search_form.jsp");
+            mv.addObject("error", "Erreur lors de la réservation: " + e.getMessage());
         }
+        
         return mv;
     }
 
