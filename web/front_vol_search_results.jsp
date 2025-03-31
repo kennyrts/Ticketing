@@ -320,6 +320,10 @@
                         <input type="hidden" name="type_siege_id" value="<%= vol.getTypeSiegeId() %>">
                         <input type="hidden" name="prix" value="<%= vol.getPrixActuel() %>">
                         <input type="hidden" name="est_promo" value="<%= hasPromo %>">
+                        <div class="form-group">
+                            <label for="age">Âge du passager:</label>
+                            <input type="number" name="age" id="age" min="0" max="120" required>
+                        </div>
                         <div class="file-input-container">
                             <label for="photo">Boarding Pass/ID (optional):</label>
                             <input type="file" name="photo" id="photo" accept="image/*" 
