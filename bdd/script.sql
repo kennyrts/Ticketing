@@ -67,6 +67,12 @@ CREATE TABLE reservation (
     photo VARCHAR(255)
 );
 
+CREATE TABLE enfant (
+    id SERIAL PRIMARY KEY,
+    age_max INTEGER NOT NULL,
+    reduction DECIMAL(5,2) NOT NULL
+);
+
 CREATE OR REPLACE VIEW vol_details AS
 SELECT 
     vts.id as vol_type_siege_id,
