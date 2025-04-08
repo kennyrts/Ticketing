@@ -103,30 +103,28 @@ public class FrontOfficeController {
                 prix = prix * (1 - reductionEnfant);
             }
             
-            // Traiter la photo si elle existe
+            // Traiter la photo
             String photoPath = null;
-            if (photo != null && photo.getSize() > 0) {
-                // Générer un nom de fichier unique
+            if (photo != null && !photo.getFileName().isEmpty()) {
                 String fileName = System.currentTimeMillis() + "_" + photo.getFileName();
-                String uploadDir = "D:/uploads/";
-                
-                // Créer le répertoire s'il n'existe pas
-                File uploadDirFile = new File(uploadDir);
-                if (!uploadDirFile.exists()) {
-                    uploadDirFile.mkdirs();
+                // Create directories if they don't exist
+                File uploadDir = new File("uploads/reservations");
+                if (!uploadDir.exists()) {
+                    uploadDir.mkdirs();
                 }
-                
-                // Enregistrer le fichier
-                try (FileOutputStream fos = new FileOutputStream(uploadDir + fileName)) {
-                    byte[] buffer = new byte[8192];
-                    int bytesRead;
-                    InputStream is = photo.getInputStream();
-                    while ((bytesRead = is.read(buffer)) != -1) {
-                        fos.write(buffer, 0, bytesRead);
+
+                // Save the file using InputStream
+                File destFile = new File(uploadDir, fileName);
+                try (InputStream in = photo.getInputStream();
+                    FileOutputStream out = new FileOutputStream(destFile)) {
+                    byte[] buffer = new byte[1024];
+                    int length;
+                    while ((length = in.read(buffer)) > 0) {
+                        out.write(buffer, 0, length);
                     }
-                    photoPath = fileName;
                 }
-            }
+                photoPath = "reservations/" + fileName;
+            }            
             
             // Insérer la réservation
             Reservation.insert(volIdInt, userId, typeSiegeIdInt, estPromo, prix, photoPath);
