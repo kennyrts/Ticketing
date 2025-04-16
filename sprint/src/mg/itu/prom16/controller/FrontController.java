@@ -12,8 +12,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Map;
-import javax.servlet.*;
-import javax.servlet.http.*;
+import jakarta.servlet.*;
+import jakarta.servlet.http.*;
 
 import mg.itu.prom16.util.HttpStatusException;
 import mg.itu.prom16.util.FormException;
