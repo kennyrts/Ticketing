@@ -6,7 +6,7 @@ set "lib=%root%\lib"
 set "web=%root%\web"
 set "temp=%root%\temp"
 set "src=%root%\src"
-set "target_dir=D:\ITU\L3\S5\Nouveau dossier\wildfly-10.0.0.Final\standalone\deployments"
+set "target_dir=D:\ITU\L3\S5\Nouveau dossier\wildfly-33.0.1.Final\standalone\deployments"
 set "war_name=ticketing"
 
 :: copy all java files to temp directory
