@@ -11,6 +11,7 @@ import mg.itu.prom16.annotations.Url;
 import mg.itu.prom16.annotations.Post;
 import mg.itu.prom16.annotations.Param;
 import mg.itu.prom16.annotations.PdfExport;
+import mg.itu.prom16.annotations.CsvExport;
 import model.Reservation;
 import model.Ville;
 import model.VolDetails;
@@ -156,7 +157,7 @@ public class FrontOfficeController {
             // Convert photos to base64
             for (Reservation res : reservations) {
                 if (res.getPhoto() != null) {
-                    File file = new File("D:/ITU/L3/S5/Nouveau dossier/wildfly-10.0.0.Final/bin/uploads/" + res.getPhoto());
+                    File file = new File("C:/Users/Kenny/Downloads/wildfly-33.0.1.Final/bin/uploads/" + res.getPhoto());
                     if (file.exists()) {
                         byte[] fileContent = Files.readAllBytes(file.toPath());
                         String base64 = Base64.getEncoder().encodeToString(fileContent);
@@ -290,6 +291,105 @@ public class FrontOfficeController {
             // If error, return to reservations page with error message
             mv.setUrl("front_reservations");
             mv.addObject("error", "Erreur lors de l'export PDF: " + e.getMessage());
+            try {
+                int userId = (int) session.get("id");
+                mv.addObject("reservations", Reservation.getByIdUtilisateur(userId));
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
+        }
+        return mv;
+    }
+
+    @Get
+    @CsvExport(filename = "reservation", includeHeaders = true, forceDownload = true)
+    @Url("front_reservation_csv")
+    public ModelView exportReservationCsv(@Param(name = "reservation_id") String reservationId,
+                                         MySession session) {
+        ModelView mv = new ModelView();
+        try {
+            // Get user ID from session to ensure security
+            int userId = (int) session.get("id");
+            int resId = Integer.parseInt(reservationId);
+            
+            // Get the specific reservation for this user
+            List<Reservation> userReservations = Reservation.getByIdUtilisateur(userId);
+            Reservation reservation = null;
+            
+            for (Reservation res : userReservations) {
+                if (res.getId() == resId) {
+                    reservation = res;
+                    break;
+                }
+            }
+            
+            if (reservation == null) {
+                throw new Exception("Réservation non trouvée ou accès non autorisé");
+            }
+            
+            // Get user information
+            String userName = (String) session.get("nom");
+            String userLogin = (String) session.get("login");
+            
+            // Prepare data for CSV export
+            mv.addObject("reservation", reservation);
+            mv.addObject("userName", userName);
+            mv.addObject("userLogin", userLogin);
+            mv.addObject("exportDate", new java.util.Date().toString());
+            mv.addObject("reservationId", resId);
+            
+            // Add reservation details
+            mv.addObject("volId", reservation.getVolId());
+            mv.addObject("typeSiegeId", reservation.getTypeSiegeId());
+            mv.addObject("prix", reservation.getPrix());
+            mv.addObject("estPromo", reservation.isEstPromo() ? "Oui" : "Non");
+            
+        } catch (Exception e) {
+            // If error, return to reservations page with error message
+            mv.setUrl("front_reservations");
+            mv.addObject("error", "Erreur lors de l'export CSV: " + e.getMessage());
+            try {
+                int userId = (int) session.get("id");
+                mv.addObject("reservations", Reservation.getByIdUtilisateur(userId));
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
+        }
+        return mv;
+    }
+
+    @Get
+    @CsvExport(filename = "mes_reservations", includeHeaders = true, forceDownload = true)
+    @Url("front_reservations_csv")
+    public ModelView exportAllReservationsCsv(MySession session) {
+        ModelView mv = new ModelView();
+        try {
+            // Get user ID from session
+            int userId = (int) session.get("id");
+            String userName = (String) session.get("nom");
+            String userLogin = (String) session.get("login");
+            
+            // Get user's reservations
+            List<Reservation> reservations = Reservation.getByIdUtilisateur(userId);
+            
+            // Prepare data for CSV export
+            mv.addObject("reservations", reservations);
+            mv.addObject("userName", userName);
+            mv.addObject("userLogin", userLogin);
+            mv.addObject("exportDate", new java.util.Date().toString());
+            mv.addObject("totalReservations", reservations.size());
+            
+            // Calculate total amount
+            double totalAmount = 0;
+            for (Reservation res : reservations) {
+                totalAmount += res.getPrix();
+            }
+            mv.addObject("totalAmount", totalAmount);
+            
+        } catch (Exception e) {
+            // If error, return to reservations page with error message
+            mv.setUrl("front_reservations");
+            mv.addObject("error", "Erreur lors de l'export CSV: " + e.getMessage());
             try {
                 int userId = (int) session.get("id");
                 mv.addObject("reservations", Reservation.getByIdUtilisateur(userId));

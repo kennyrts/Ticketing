@@ -13,14 +13,14 @@ import java.util.Map;
 
 /**
  * CSV generator utility for Sprint framework
- * Converts ModelView data to CSV format
+ * Converts ModelView data to standard CSV format
  */
 public class CsvGenerator {
     
     private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
     
     /**
-     * Generate CSV from ModelView data
+     * Generate CSV from ModelView data in standard format
      * @param modelView The ModelView containing data to export
      * @param includeHeaders Whether to include column headers
      * @param delimiter The delimiter to use (default: comma)
@@ -32,24 +32,55 @@ public class CsvGenerator {
         
         HashMap<String, Object> data = modelView.getData();
         
-        // Process each data entry
+        // Find the main data - prioritize lists, then complex objects, then scalars
+        List<?> mainList = null;
+        Object mainObject = null;
+        
+        // First pass: look for lists (collections of data)
         for (Map.Entry<String, Object> entry : data.entrySet()) {
             String key = entry.getKey();
             Object value = entry.getValue();
             
             // Skip common web attributes
-            if (key.equals("error") || key.equals("success") || key.equals("message")) {
+            if (isWebAttribute(key)) {
                 continue;
             }
             
             if (value instanceof List) {
                 List<?> list = (List<?>) value;
-                if (!list.isEmpty()) {
-                    writeCsvForList(writer, key, list, includeHeaders, delimiter);
+                if (!list.isEmpty() && (mainList == null || list.size() > mainList.size())) {
+                    mainList = list;
                 }
-            } else if (value != null) {
-                writeCsvForSingleObject(writer, key, value, includeHeaders, delimiter);
             }
+        }
+        
+        // Second pass: if no list found, look for complex objects
+        if (mainList == null) {
+            for (Map.Entry<String, Object> entry : data.entrySet()) {
+                String key = entry.getKey();
+                Object value = entry.getValue();
+                
+                if (isWebAttribute(key)) {
+                    continue;
+                }
+                
+                if (value != null && !isPrimitiveOrString(value) && !(value instanceof List)) {
+                    mainObject = value;
+                    break; // Take the first complex object found
+                }
+            }
+        }
+        
+        // Generate CSV based on what we found
+        if (mainList != null && !mainList.isEmpty()) {
+            // Write CSV for the main list
+            writeListAsCsv(writer, mainList, includeHeaders, delimiter);
+        } else if (mainObject != null) {
+            // Write CSV for a single complex object
+            writeObjectAsCsv(writer, mainObject, includeHeaders, delimiter);
+        } else {
+            // Write CSV for scalar values only
+            writeScalarsAsCsv(writer, data, includeHeaders, delimiter);
         }
         
         writer.flush();
@@ -59,28 +90,25 @@ public class CsvGenerator {
     }
     
     /**
-     * Write CSV for a list of objects
+     * Write a list of objects as standard CSV
      */
-    private static void writeCsvForList(Writer writer, String listName, List<?> list, 
-                                       boolean includeHeaders, String delimiter) throws IOException {
+    private static void writeListAsCsv(Writer writer, List<?> list, 
+                                      boolean includeHeaders, String delimiter) throws IOException {
         
         if (list.isEmpty()) return;
         
         Object firstItem = list.get(0);
         
-        // Write section header
-        writer.write("# " + formatKey(listName) + "\n");
-        
         if (isPrimitiveOrString(firstItem)) {
             // Simple list of primitives
             if (includeHeaders) {
-                writer.write(formatKey(listName) + "\n");
+                writer.write("Value\n");
             }
             for (Object item : list) {
-                writer.write(escapeCsvValue(item.toString()) + "\n");
+                writer.write(escapeCsvValue(formatValue(item)) + "\n");
             }
         } else {
-            // List of objects
+            // List of complex objects
             Field[] fields = firstItem.getClass().getDeclaredFields();
             
             // Write headers
@@ -88,7 +116,7 @@ public class CsvGenerator {
                 boolean first = true;
                 for (Field field : fields) {
                     if (!first) writer.write(delimiter);
-                    writer.write(formatKey(field.getName()));
+                    writer.write(escapeCsvValue(formatKey(field.getName())));
                     first = false;
                 }
                 writer.write("\n");
@@ -112,47 +140,98 @@ public class CsvGenerator {
                 writer.write("\n");
             }
         }
-        
-        writer.write("\n"); // Empty line between sections
     }
     
     /**
-     * Write CSV for a single object
+     * Write a single complex object as standard CSV (one header line, one data line)
      */
-    private static void writeCsvForSingleObject(Writer writer, String objectName, Object obj, 
-                                               boolean includeHeaders, String delimiter) throws IOException {
+    private static void writeObjectAsCsv(Writer writer, Object obj, 
+                                        boolean includeHeaders, String delimiter) throws IOException {
         
-        writer.write("# " + formatKey(objectName) + "\n");
+        if (obj == null) return;
         
-        if (isPrimitiveOrString(obj)) {
-            if (includeHeaders) {
-                writer.write(formatKey(objectName) + "\n");
-            }
-            writer.write(escapeCsvValue(obj.toString()) + "\n");
-        } else {
-            Field[] fields = obj.getClass().getDeclaredFields();
-            
-            // Write as key-value pairs
-            if (includeHeaders) {
-                writer.write("Property" + delimiter + "Value\n");
-            }
-            
+        Field[] fields = obj.getClass().getDeclaredFields();
+        
+        // Write headers
+        if (includeHeaders) {
+            boolean first = true;
             for (Field field : fields) {
-                try {
-                    field.setAccessible(true);
-                    Object fieldValue = field.get(obj);
-                    
-                    writer.write(escapeCsvValue(formatKey(field.getName())));
-                    writer.write(delimiter);
-                    writer.write(escapeCsvValue(formatValue(fieldValue)));
-                    writer.write("\n");
-                } catch (IllegalAccessException e) {
-                    // Skip inaccessible fields
-                }
+                if (!first) writer.write(delimiter);
+                writer.write(escapeCsvValue(formatKey(field.getName())));
+                first = false;
+            }
+            writer.write("\n");
+        }
+        
+        // Write data row
+        boolean first = true;
+        for (Field field : fields) {
+            if (!first) writer.write(delimiter);
+            
+            try {
+                field.setAccessible(true);
+                Object fieldValue = field.get(obj);
+                writer.write(escapeCsvValue(formatValue(fieldValue)));
+            } catch (IllegalAccessException e) {
+                writer.write("");
+            }
+            first = false;
+        }
+        writer.write("\n");
+    }
+    
+    /**
+     * Write scalar values as standard CSV (one header line, one data line)
+     */
+    private static void writeScalarsAsCsv(Writer writer, HashMap<String, Object> data, 
+                                         boolean includeHeaders, String delimiter) throws IOException {
+        
+        // Collect all scalar values (primitive types and strings only)
+        HashMap<String, Object> scalars = new HashMap<>();
+        
+        for (Map.Entry<String, Object> entry : data.entrySet()) {
+            String key = entry.getKey();
+            Object value = entry.getValue();
+            
+            // Skip web attributes, lists, and complex objects
+            if (isWebAttribute(key) || value instanceof List || 
+                (value != null && !isPrimitiveOrString(value))) {
+                continue;
+            }
+            
+            if (value != null) {
+                scalars.put(key, value);
             }
         }
         
-        writer.write("\n"); // Empty line between sections
+        if (scalars.isEmpty()) return;
+        
+        // Write headers
+        if (includeHeaders) {
+            boolean first = true;
+            for (String key : scalars.keySet()) {
+                if (!first) writer.write(delimiter);
+                writer.write(escapeCsvValue(formatKey(key)));
+                first = false;
+            }
+            writer.write("\n");
+        }
+        
+        // Write values
+        boolean first = true;
+        for (Object value : scalars.values()) {
+            if (!first) writer.write(delimiter);
+            writer.write(escapeCsvValue(formatValue(value)));
+            first = false;
+        }
+        writer.write("\n");
+    }
+    
+    /**
+     * Check if a key is a web attribute that should be skipped
+     */
+    private static boolean isWebAttribute(String key) {
+        return key.equals("error") || key.equals("success") || key.equals("message");
     }
     
     /**
@@ -187,10 +266,9 @@ public class CsvGenerator {
     }
     
     /**
-     * Format a key name for display
+     * Format a key name for display (convert camelCase to Title Case)
      */
     private static String formatKey(String key) {
-        // Convert camelCase to Title Case
         StringBuilder result = new StringBuilder();
         boolean capitalizeNext = true;
         

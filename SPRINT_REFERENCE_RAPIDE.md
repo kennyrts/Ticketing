@@ -570,16 +570,15 @@ public ModelView exportAllReservationsCsv(MySession session) {
 
 ### Format de sortie CSV
 ```csv
-# Reservations
 Id,Vol Id,User Id,Type Siege Id,Date Reservation,Heure Depart,Ville Depart,Ville Arrivee,Prix,Est Promo
 1,101,5,2,2024-01-15 10:30:00,2024-01-20 14:30:00,Paris,London,299.99,No
 2,102,5,1,2024-01-16 09:15:00,2024-01-22 16:45:00,London,New York,599.99,Yes
+```
 
-# Export Info
-User Name,John Doe
-Export Date,2024-01-17 15:30:45
-Total Reservations,2
-Total Amount,899.98
+Pour un export d'objet unique :
+```csv
+User Name,Export Date,Reservation Id,Prix,Est Promo
+John Doe,2024-01-17 15:30:45,1,299.99,No
 ```
 
 ---
