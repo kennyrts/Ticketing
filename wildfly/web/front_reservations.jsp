@@ -209,6 +209,149 @@
         .reservation-photo {
             margin-top: 10px;
         }
+        
+        /* ===== NOUVEAUX STYLES AMÉLIORÉS ===== */
+        .export-buttons {
+            margin-bottom: 20px;
+            padding: 15px;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            border-radius: 8px;
+            border: 1px solid #e0e6ed;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .export-info {
+            display: flex;
+            align-items: center;
+            color: #555;
+            font-weight: 500;
+        }
+        
+        .export-info span:first-child {
+            margin-right: 8px;
+            font-size: 1.2em;
+        }
+        
+        .export-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px 24px;
+            text-decoration: none;
+            border-radius: 25px;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+            border: none;
+        }
+        
+        .export-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        .export-btn span {
+            margin-right: 8px;
+            font-size: 16px;
+        }
+        
+        .action-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-top: 15px;
+        }
+        
+        .btn-group {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 100px;
+        }
+        
+        .btn span {
+            margin-right: 6px;
+            font-size: 14px;
+        }
+        
+        .btn-cancel {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%);
+            color: white;
+            box-shadow: 0 2px 8px rgba(255, 107, 107, 0.3);
+        }
+        
+        .btn-cancel:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(255, 107, 107, 0.4);
+        }
+        
+        .btn-cancel:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .btn-pdf {
+            background: linear-gradient(135deg, #ffa726 0%, #fb8c00 100%);
+            color: white;
+            box-shadow: 0 2px 8px rgba(255, 167, 38, 0.3);
+        }
+        
+        .btn-pdf:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(255, 167, 38, 0.4);
+        }
+        
+        .btn-disabled {
+            background: linear-gradient(135deg, #bdbdbd 0%, #9e9e9e 100%);
+            color: #666;
+            cursor: not-allowed;
+        }
+        
+        .reservation-status {
+            display: flex;
+            align-items: center;
+            margin-top: 10px;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        
+        .status-active {
+            background-color: #e8f5e8;
+            color: #2e7d32;
+            border: 1px solid #c8e6c9;
+        }
+        
+        .status-expired {
+            background-color: #ffebee;
+            color: #c62828;
+            border: 1px solid #ffcdd2;
+        }
+        
+        .status-icon {
+            margin-right: 6px;
+            font-size: 14px;
+        }
     </style>
 </head>
 <body>    
@@ -237,6 +380,19 @@
             SimpleDateFormat sdf = new SimpleDateFormat("EEE, MMM d, yyyy HH:mm");
             List<Reservation> reservations = (List<Reservation>) request.getAttribute("reservations");
             if (reservations != null && !reservations.isEmpty()) {
+            %>
+            <!-- Export buttons améliorés -->
+            <div class="export-buttons">
+                <div class="export-info">
+                    <span>📊</span>
+                    <span>Export your reservations for records</span>
+                </div>
+                <a href="front_reservations_pdf" class="export-btn">
+                    <span>📄</span>
+                    Export All to PDF
+                </a>
+            </div>
+            <%
                 for (Reservation res : reservations) {
             %>
             <div class="reservation-card <%= res.isEstPromo() ? "promo" : "" %>">
@@ -269,23 +425,49 @@
                     <div class="price">
                         <%= String.format("%.2f", res.getPrix()) %> €
                     </div>
+                    
+                    <!-- Statut de réservation amélioré -->
                     <% if (res.getLimiteAnnulation() != null) { %>
-                        <div class="deadline-info <%= res.isEstAnnulable() ? "" : "deadline-warning" %>">
-                            Cancellation deadline:<br>
-                            <%= sdf.format(res.getLimiteAnnulation()) %>
+                        <div class="reservation-status <%= res.isEstAnnulable() ? "status-active" : "status-expired" %>">
+                            <span class="status-icon"><%= res.isEstAnnulable() ? "✅" : "⏰" %></span>
+                            <div>
+                                <div style="font-weight: 600;">
+                                    <%= res.isEstAnnulable() ? "Cancellable" : "Non-cancellable" %>
+                                </div>
+                                <div style="font-size: 11px;">
+                                    Until: <%= sdf.format(res.getLimiteAnnulation()) %>
+                                </div>
+                            </div>
                         </div>
                     <% } %>
-                    <% if (res.isEstAnnulable()) { %>
-                        <form action="front_reservation_annuler" method="post" 
-                              onsubmit="return confirm('Are you sure you want to cancel this reservation?');">
-                            <input type="hidden" name="reservation_id" value="<%= res.getId() %>">
-                            <button type="submit" class="cancel-btn">Cancel Reservation</button>
-                        </form>
-                    <% } else { %>
-                        <div class="deadline-info deadline-warning">
-                            Cancellation no longer available
+                    
+                    <!-- Boutons d'action restructurés -->
+                    <div class="action-buttons">
+                        <div class="btn-group">
+                            <% if (res.isEstAnnulable()) { %>
+                                <form action="front_reservation_annuler" method="post" 
+                                      onsubmit="return confirm('Are you sure you want to cancel this reservation?')" 
+                                      style="display: inline;">
+                                    <input type="hidden" name="reservation_id" value="<%= res.getId() %>">
+                                    <button type="submit" class="btn btn-cancel">
+                                        <span>❌</span>
+                                        Cancel
+                                    </button>
+                                </form>
+                            <% } else { %>
+                                <button class="btn btn-disabled" disabled>
+                                    <span>🚫</span>
+                                    Cannot Cancel
+                                </button>
+                            <% } %>
+                            
+                            <a href="front_reservation_pdf?reservation_id=<%= res.getId() %>" 
+                               class="btn btn-pdf">
+                                <span>📄</span>
+                                Export PDF
+                            </a>
                         </div>
-                    <% } %>
+                    </div>
                 </div>
             </div>
             <%
@@ -302,4 +484,4 @@
         </div>
     </div>
 </body>
-</html> 
+</html>
