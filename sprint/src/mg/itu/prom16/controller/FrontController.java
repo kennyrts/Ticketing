@@ -34,6 +34,8 @@ import mg.itu.prom16.annotations.validation.Max;
 import mg.itu.prom16.annotations.validation.Min;
 import mg.itu.prom16.annotations.validation.Required;
 import mg.itu.prom16.annotations.Auth;
+import mg.itu.prom16.annotations.PdfExport;
+import mg.itu.prom16.util.PdfGenerator;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -299,7 +301,34 @@ public class FrontController extends HttpServlet {
                 // Exécuter la méthode et obtenir le résultat
                 Object result = method.invoke(instance,parameterValues);
 
-                if (method.isAnnotationPresent(Restapi.class)) {
+                if (method.isAnnotationPresent(PdfExport.class)) {
+                    // Handle PDF export
+                    PdfExport pdfAnnotation = method.getAnnotation(PdfExport.class);
+                    
+                    if (result instanceof ModelView) {
+                        ModelView mv = (ModelView) result;
+                        
+                        // Generate PDF
+                        String title = pdfAnnotation.title().isEmpty() ? "Export PDF" : pdfAnnotation.title();
+                        byte[] pdfBytes = PdfGenerator.generatePdf(mv, title);
+                        
+                        // Set response headers
+                        response.setContentType("application/pdf");
+                        String filename = pdfAnnotation.filename().isEmpty() ? "export.pdf" : pdfAnnotation.filename() + ".pdf";
+                        
+                        if (pdfAnnotation.forceDownload()) {
+                            response.setHeader("Content-Disposition", "attachment; filename=\"" + filename + "\"");
+                        } else {
+                            response.setHeader("Content-Disposition", "inline; filename=\"" + filename + "\"");
+                        }
+                        
+                        response.setContentLength(pdfBytes.length);
+                        response.getOutputStream().write(pdfBytes);
+                        response.getOutputStream().flush();
+                    } else {
+                        throw new HttpStatusException(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "PDF export requires ModelView return type");
+                    }
+                } else if (method.isAnnotationPresent(Restapi.class)) {
                     response.setContentType("application/json;charset=UTF-8");
                     if (result instanceof ModelView) {
                         // Si result est un ModelView, extraire les données et les convertir en JSON

@@ -8,9 +8,10 @@
 5. [Upload de Fichiers](#upload-de-fichiers)
 6. [Authentification](#authentification)
 7. [API REST](#api-rest)
-8. [Validation](#validation)
-9. [Classes Utilitaires](#classes-utilitaires)
-10. [Exemples Complets](#exemples-complets)
+8. [Export PDF](#export-pdf)
+9. [Validation](#validation)
+10. [Classes Utilitaires](#classes-utilitaires)
+11. [Exemples Complets](#exemples-complets)
 
 ---
 
@@ -317,6 +318,127 @@ public ModelView createUser(@FormObject UserForm form) {
     return response;
 }
 ```
+
+---
+
+## Export PDF
+
+### @PdfExport - Export automatique en PDF
+```java
+@Get
+@PdfExport(filename = "rapport", title = "Rapport des Ventes", forceDownload = true)
+@Url("sales/export")
+public ModelView exportSales() {
+    ModelView mv = new ModelView();
+    
+    // Ajouter les données à exporter
+    mv.addObject("sales", salesService.getAllSales());
+    mv.addObject("totalAmount", salesService.getTotalAmount());
+    mv.addObject("exportDate", new Date());
+    
+    return mv;
+}
+```
+
+### Paramètres de @PdfExport
+```java
+@PdfExport(
+    filename = "mon_document",     // Nom du fichier (sans .pdf)
+    title = "Titre du Document",  // Titre affiché dans le PDF
+    forceDownload = true          // true = téléchargement, false = affichage
+)
+```
+
+### Exemple Wildfly - Export d'une réservation
+```java
+@Get
+@PdfExport(filename = "reservation", title = "Détails de la Réservation", forceDownload = true)
+@Url("front_reservation_pdf")
+public ModelView exportReservationPdf(@Param(name = "reservation_id") String reservationId,
+                                     MySession session) {
+    ModelView mv = new ModelView();
+    try {
+        // Sécurité : vérifier que la réservation appartient à l'utilisateur
+        int userId = (int) session.get("id");
+        int resId = Integer.parseInt(reservationId);
+        
+        List<Reservation> userReservations = Reservation.getByIdUtilisateur(userId);
+        Reservation reservation = null;
+        
+        for (Reservation res : userReservations) {
+            if (res.getId() == resId) {
+                reservation = res;
+                break;
+            }
+        }
+        
+        if (reservation == null) {
+            throw new Exception("Réservation non trouvée ou accès non autorisé");
+        }
+        
+        // Préparer les données pour l'export PDF
+        mv.addObject("reservation", reservation);
+        mv.addObject("userName", session.get("nom"));
+        mv.addObject("userLogin", session.get("login"));
+        mv.addObject("exportDate", new Date().toString());
+        
+    } catch (Exception e) {
+        // En cas d'erreur, rediriger vers la liste des réservations
+        mv.setUrl("front_reservations");
+        mv.addObject("error", "Erreur lors de l'export PDF: " + e.getMessage());
+    }
+    return mv;
+}
+```
+
+### Export de listes complètes
+```java
+@Get
+@PdfExport(filename = "mes_reservations", title = "Mes Réservations", forceDownload = true)
+@Url("front_reservations_pdf")
+public ModelView exportAllReservationsPdf(MySession session) {
+    ModelView mv = new ModelView();
+    try {
+        int userId = (int) session.get("id");
+        List<Reservation> reservations = Reservation.getByIdUtilisateur(userId);
+        
+        // Données pour le PDF
+        mv.addObject("reservations", reservations);
+        mv.addObject("userName", session.get("nom"));
+        mv.addObject("totalReservations", reservations.size());
+        
+        // Calculer le montant total
+        double totalAmount = reservations.stream()
+                                       .mapToDouble(Reservation::getPrix)
+                                       .sum();
+        mv.addObject("totalAmount", totalAmount);
+        
+    } catch (Exception e) {
+        mv.setUrl("front_reservations");
+        mv.addObject("error", "Erreur lors de l'export PDF: " + e.getMessage());
+    }
+    return mv;
+}
+```
+
+### Utilisation dans les JSP
+```html
+<!-- Bouton d'export global -->
+<div class="export-buttons">
+    <a href="front_reservations_pdf" class="export-btn">📄 Export All to PDF</a>
+</div>
+
+<!-- Bouton d'export individuel -->
+<a href="front_reservation_pdf?reservation_id=<%= reservation.getId() %>" 
+   class="export-btn individual">📄 Export PDF</a>
+```
+
+### Fonctionnalités du générateur PDF
+- **Formatage automatique** : Les données du ModelView sont formatées automatiquement
+- **Gestion des listes** : Les collections sont affichées sous forme de listes numérotées
+- **Extraction d'objets** : Les propriétés des objets sont extraites automatiquement
+- **Sécurité** : Vérification des permissions avant export
+- **Gestion d'erreurs** : Redirection automatique en cas d'erreur
 
 ---
 

@@ -10,6 +10,7 @@ import mg.itu.prom16.annotations.Get;
 import mg.itu.prom16.annotations.Url;
 import mg.itu.prom16.annotations.Post;
 import mg.itu.prom16.annotations.Param;
+import mg.itu.prom16.annotations.PdfExport;
 import model.Reservation;
 import model.Ville;
 import model.VolDetails;
@@ -196,6 +197,105 @@ public class FrontOfficeController {
         } catch (Exception e) {
             mv.setUrl("front_reservations");
             mv.addObject("error", "Failed to cancel reservation: " + e.getMessage());
+        }
+        return mv;
+    }
+
+    @Get
+    @PdfExport(filename = "reservation", title = "Détails de la Réservation", forceDownload = true)
+    @Url("front_reservation_pdf")
+    public ModelView exportReservationPdf(@Param(name = "reservation_id") String reservationId,
+                                         MySession session) {
+        ModelView mv = new ModelView();
+        try {
+            // Get user ID from session to ensure security
+            int userId = (int) session.get("id");
+            int resId = Integer.parseInt(reservationId);
+            
+            // Get the specific reservation for this user
+            List<Reservation> userReservations = Reservation.getByIdUtilisateur(userId);
+            Reservation reservation = null;
+            
+            for (Reservation res : userReservations) {
+                if (res.getId() == resId) {
+                    reservation = res;
+                    break;
+                }
+            }
+            
+            if (reservation == null) {
+                throw new Exception("Réservation non trouvée ou accès non autorisé");
+            }
+            
+            // Get user information
+            String userName = (String) session.get("nom");
+            String userLogin = (String) session.get("login");
+            
+            // Prepare data for PDF export
+            mv.addObject("reservation", reservation);
+            mv.addObject("userName", userName);
+            mv.addObject("userLogin", userLogin);
+            mv.addObject("exportDate", new java.util.Date().toString());
+            mv.addObject("reservationId", resId);
+            
+            // Add reservation details
+            mv.addObject("volId", reservation.getVolId());
+            mv.addObject("typeSiegeId", reservation.getTypeSiegeId());
+            mv.addObject("prix", reservation.getPrix());
+            mv.addObject("estPromo", reservation.isEstPromo() ? "Oui" : "Non");
+            
+        } catch (Exception e) {
+            // If error, return to reservations page with error message
+            mv.setUrl("front_reservations");
+            mv.addObject("error", "Erreur lors de l'export PDF: " + e.getMessage());
+            try {
+                int userId = (int) session.get("id");
+                mv.addObject("reservations", Reservation.getByIdUtilisateur(userId));
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
+        }
+        return mv;
+    }
+
+    @Get
+    @PdfExport(filename = "mes_reservations", title = "Mes Réservations", forceDownload = true)
+    @Url("front_reservations_pdf")
+    public ModelView exportAllReservationsPdf(MySession session) {
+        ModelView mv = new ModelView();
+        try {
+            // Get user ID from session
+            int userId = (int) session.get("id");
+            String userName = (String) session.get("nom");
+            String userLogin = (String) session.get("login");
+            
+            // Get user's reservations
+            List<Reservation> reservations = Reservation.getByIdUtilisateur(userId);
+            
+            // Prepare data for PDF export
+            mv.addObject("reservations", reservations);
+            mv.addObject("userName", userName);
+            mv.addObject("userLogin", userLogin);
+            mv.addObject("exportDate", new java.util.Date().toString());
+            mv.addObject("totalReservations", reservations.size());
+            
+            // Calculate total amount
+            double totalAmount = 0;
+            for (Reservation res : reservations) {
+                totalAmount += res.getPrix();
+            }
+            mv.addObject("totalAmount", totalAmount);
+            
+        } catch (Exception e) {
+            // If error, return to reservations page with error message
+            mv.setUrl("front_reservations");
+            mv.addObject("error", "Erreur lors de l'export PDF: " + e.getMessage());
+            try {
+                int userId = (int) session.get("id");
+                mv.addObject("reservations", Reservation.getByIdUtilisateur(userId));
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
         }
         return mv;
     }

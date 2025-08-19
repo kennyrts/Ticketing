@@ -209,6 +209,39 @@
         .reservation-photo {
             margin-top: 10px;
         }
+        
+        .export-buttons {
+            margin-bottom: 20px;
+            text-align: right;
+        }
+        
+        .export-btn {
+            background-color: #2196F3;
+            color: white;
+            padding: 10px 20px;
+            text-decoration: none;
+            border-radius: 4px;
+            margin-left: 10px;
+            transition: background-color 0.3s;
+            display: inline-block;
+        }
+        
+        .export-btn:hover {
+            background-color: #1976D2;
+        }
+        
+        .export-btn.individual {
+            background-color: #FF9800;
+            padding: 6px 12px;
+            font-size: 0.9em;
+            margin-top: 10px;
+            margin-left: 0;
+            width: 100%;
+        }
+        
+        .export-btn.individual:hover {
+            background-color: #F57C00;
+        }
     </style>
 </head>
 <body>    
@@ -237,6 +270,12 @@
             SimpleDateFormat sdf = new SimpleDateFormat("EEE, MMM d, yyyy HH:mm");
             List<Reservation> reservations = (List<Reservation>) request.getAttribute("reservations");
             if (reservations != null && !reservations.isEmpty()) {
+            %>
+            <!-- Export buttons -->
+            <div class="export-buttons">
+                <a href="front_reservations_pdf" class="export-btn">📄 Export All to PDF</a>
+            </div>
+            <%
                 for (Reservation res : reservations) {
             %>
             <div class="reservation-card <%= res.isEstPromo() ? "promo" : "" %>">
@@ -286,6 +325,10 @@
                             Cancellation no longer available
                         </div>
                     <% } %>
+                    
+                    <!-- Individual PDF export button -->
+                    <a href="front_reservation_pdf?reservation_id=<%= res.getId() %>" 
+                       class="export-btn individual">📄 Export PDF</a>
                 </div>
             </div>
             <%
