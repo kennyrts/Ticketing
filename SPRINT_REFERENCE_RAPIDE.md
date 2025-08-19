@@ -9,7 +9,8 @@
 6. [Authentification](#authentification)
 7. [API REST](#api-rest)
 8. [Export PDF](#export-pdf)
-9. [Validation](#validation)
+9. [Export CSV](#export-csv)
+10. [Validation](#validation)
 10. [Classes Utilitaires](#classes-utilitaires)
 11. [Exemples Complets](#exemples-complets)
 
@@ -439,6 +440,147 @@ public ModelView exportAllReservationsPdf(MySession session) {
 - **Extraction d'objets** : Les propriétés des objets sont extraites automatiquement
 - **Sécurité** : Vérification des permissions avant export
 - **Gestion d'erreurs** : Redirection automatique en cas d'erreur
+
+---
+
+## Export CSV
+
+### @CsvExport - Export automatique en CSV
+```java
+@Get
+@CsvExport(filename = "rapport_ventes", includeHeaders = true, forceDownload = true)
+@Url("sales/export_csv")
+public ModelView exportSalesCsv() {
+    ModelView mv = new ModelView();
+    
+    // Ajouter les données à exporter
+    mv.addObject("sales", salesService.getAllSales());
+    mv.addObject("totalAmount", salesService.getTotalAmount());
+    mv.addObject("exportDate", new Date());
+    
+    return mv;
+}
+```
+
+### Paramètres de @CsvExport
+```java
+@CsvExport(
+    filename = "mon_export",      // Nom du fichier (sans .csv)
+    includeHeaders = true,        // Inclure les en-têtes de colonnes
+    delimiter = ",",              // Délimiteur (virgule par défaut)
+    forceDownload = true          // true = téléchargement, false = affichage
+)
+```
+
+### Exemple Wildfly - Export CSV d'une réservation
+```java
+@Get
+@CsvExport(filename = "reservation", includeHeaders = true, forceDownload = true)
+@Url("front_reservation_csv")
+public ModelView exportReservationCsv(@Param(name = "reservation_id") String reservationId,
+                                     MySession session) {
+    ModelView mv = new ModelView();
+    try {
+        // Sécurité : vérifier que la réservation appartient à l'utilisateur
+        int userId = (int) session.get("id");
+        int resId = Integer.parseInt(reservationId);
+        
+        List<Reservation> userReservations = Reservation.getByIdUtilisateur(userId);
+        Reservation reservation = null;
+        
+        for (Reservation res : userReservations) {
+            if (res.getId() == resId) {
+                reservation = res;
+                break;
+            }
+        }
+        
+        if (reservation == null) {
+            throw new Exception("Réservation non trouvée ou accès non autorisé");
+        }
+        
+        // Préparer les données pour l'export CSV
+        mv.addObject("reservation", reservation);
+        mv.addObject("userName", session.get("nom"));
+        mv.addObject("userLogin", session.get("login"));
+        mv.addObject("exportDate", new Date().toString());
+        
+    } catch (Exception e) {
+        // En cas d'erreur, rediriger vers la liste des réservations
+        mv.setUrl("front_reservations");
+        mv.addObject("error", "Erreur lors de l'export CSV: " + e.getMessage());
+    }
+    return mv;
+}
+```
+
+### Export CSV de listes complètes
+```java
+@Get
+@CsvExport(filename = "mes_reservations", includeHeaders = true, delimiter = ";")
+@Url("front_reservations_csv")
+public ModelView exportAllReservationsCsv(MySession session) {
+    ModelView mv = new ModelView();
+    try {
+        int userId = (int) session.get("id");
+        List<Reservation> reservations = Reservation.getByIdUtilisateur(userId);
+        
+        // Données pour le CSV
+        mv.addObject("reservations", reservations);
+        mv.addObject("userName", session.get("nom"));
+        mv.addObject("totalReservations", reservations.size());
+        
+        // Calculer le montant total
+        double totalAmount = reservations.stream()
+                                       .mapToDouble(Reservation::getPrix)
+                                       .sum();
+        mv.addObject("totalAmount", totalAmount);
+        
+    } catch (Exception e) {
+        mv.setUrl("front_reservations");
+        mv.addObject("error", "Erreur lors de l'export CSV: " + e.getMessage());
+    }
+    return mv;
+}
+```
+
+### Utilisation dans les JSP
+```html
+<!-- Boutons d'export globaux -->
+<div class="export-buttons">
+    <a href="front_reservations_pdf" class="export-btn">📄 Export All to PDF</a>
+    <a href="front_reservations_csv" class="export-btn">📊 Export All to CSV</a>
+</div>
+
+<!-- Boutons d'export individuels -->
+<a href="front_reservation_pdf?reservation_id=<%= reservation.getId() %>" 
+   class="btn btn-pdf">📄 Export PDF</a>
+<a href="front_reservation_csv?reservation_id=<%= reservation.getId() %>" 
+   class="btn btn-csv">📊 Export CSV</a>
+```
+
+### Fonctionnalités du générateur CSV
+- **Formatage automatique** : Les données du ModelView sont formatées en CSV
+- **Gestion des en-têtes** : Génération automatique des noms de colonnes
+- **Échappement CSV** : Gestion automatique des virgules, guillemets et retours à la ligne
+- **Délimiteurs personnalisables** : Virgule, point-virgule, tabulation, etc.
+- **Extraction d'objets** : Les propriétés des objets sont extraites automatiquement
+- **Gestion des listes** : Les collections sont formatées en lignes CSV
+- **Sécurité** : Vérification des permissions avant export
+
+### Format de sortie CSV
+```csv
+# Reservations
+Id,Vol Id,User Id,Type Siege Id,Date Reservation,Heure Depart,Ville Depart,Ville Arrivee,Prix,Est Promo
+1,101,5,2,2024-01-15 10:30:00,2024-01-20 14:30:00,Paris,London,299.99,No
+2,102,5,1,2024-01-16 09:15:00,2024-01-22 16:45:00,London,New York,599.99,Yes
+
+# Export Info
+User Name,John Doe
+Export Date,2024-01-17 15:30:45
+Total Reservations,2
+Total Amount,899.98
+```
 
 ---
 
