@@ -320,6 +320,17 @@
             box-shadow: 0 4px 12px rgba(255, 167, 38, 0.4);
         }
         
+        .btn-csv {
+            background: linear-gradient(135deg, #4caf50 0%, #45a049 100%);
+            color: white;
+            box-shadow: 0 2px 8px rgba(76, 175, 80, 0.3);
+        }
+        
+        .btn-csv:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(76, 175, 80, 0.4);
+        }
+        
         .btn-disabled {
             background: linear-gradient(135deg, #bdbdbd 0%, #9e9e9e 100%);
             color: #666;
@@ -387,10 +398,16 @@
                     <span>📊</span>
                     <span>Export your reservations for records</span>
                 </div>
-                <a href="front_reservations_pdf" class="export-btn">
-                    <span>📄</span>
-                    Export All to PDF
-                </a>
+                <div style="display: flex; gap: 10px;">
+                    <a href="front_reservations_pdf" class="export-btn">
+                        <span>📄</span>
+                        Export All to PDF
+                    </a>
+                    <a href="front_reservations_csv" class="export-btn" style="background: linear-gradient(135deg, #4caf50 0%, #45a049 100%);">
+                        <span>📊</span>
+                        Export All to CSV
+                    </a>
+                </div>
             </div>
             <%
                 for (Reservation res : reservations) {
@@ -415,7 +432,7 @@
                     <% } %>
                     <% if (res.getPhoto() != null) { %>
                         <div class="reservation-photo">
-                            <img src="<%= res.getPhoto() %>" 
+                            <img src="uploads/reservations/<%= res.getPhoto() %>" 
                                 alt="Boarding Pass/ID" style="max-width: 200px; margin-top: 10px;">
                         </div>
                     <% } %>
@@ -465,6 +482,12 @@
                                class="btn btn-pdf">
                                 <span>📄</span>
                                 Export PDF
+                            </a>
+                            
+                            <a href="front_reservation_csv?reservation_id=<%= res.getId() %>" 
+                               class="btn btn-csv">
+                                <span>📊</span>
+                                Export CSV
                             </a>
                         </div>
                     </div>
