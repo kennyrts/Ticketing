@@ -158,7 +158,7 @@ public class FrontOfficeController {
             // Convert photos to base64
             for (Reservation res : reservations) {
                 if (res.getPhoto() != null) {
-                    File file = new File("C:/Users/Kenny/Downloads/wildfly-33.0.1.Final/bin/uploads/" + res.getPhoto());
+                    File file = new File("D:/ITU/L3/S5/Nouveau dossier/wildfly-33.0.1.Final/bin/uploads/" + res.getPhoto());
                     if (file.exists()) {
                         byte[] fileContent = Files.readAllBytes(file.toPath());
                         String base64 = Base64.getEncoder().encodeToString(fileContent);

@@ -58,6 +58,7 @@ RÈGLES IMPORTANTES À RESPECTER :
 5. Le prix_paye est le prix de la réservation, pas un statut de paiement
 6. Garder la simplicité, pas de sur-ingénierie
 7. Ne pas utiliser le terminal (si commande a faire juste citer)
+8. Mettre a jour ce fichier contexte a chaque information utile assimilee
 
 FONCTIONNALITÉS ACTUELLES :
 --------------------------

@@ -164,6 +164,3 @@ CREATE TABLE paiement (
     date_paiement TIMESTAMP NOT NULL,
     date_creation TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
-
--- Index pour améliorer les performances
-CREATE INDEX idx_paiement_reservation_id ON paiement(reservation_id);

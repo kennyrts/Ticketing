@@ -488,7 +488,7 @@
                     <% } %>
                     <% if (res.getPhoto() != null) { %>
                         <div class="reservation-photo">
-                            <img src="uploads/reservations/<%= res.getPhoto() %>" 
+                            <img src="<%= res.getPhoto() %>" 
                                 alt="Boarding Pass/ID" style="max-width: 200px; margin-top: 10px;">
                         </div>
                     <% } %>
