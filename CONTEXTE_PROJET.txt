@@ -1,0 +1,74 @@
+PROMPT DE CONTEXTE POUR LE PROJET TICKETING
+===========================================
+
+Je travaille sur un projet de système de réservation de billets d'avion en Java avec trois implémentations :
+
+1. **Sprint** - Framework web fait maison (exporté en .jar)
+2. **WildFly** - Application Jakarta EE utilisant le framework Sprint
+3. **SpringBoot** - Extension moderne avec Spring Boot
+
+STRUCTURE DU PROJET :
+--------------------
+Ticketing/
+├── bdd/                    # Scripts PostgreSQL
+├── sprint/                 # Framework web fait maison
+├── wildfly/               # Application WildFly (focus principal)
+├── springboot/            # Application Spring Boot
+└── README.md
+
+BASE DE DONNÉES :
+----------------
+- PostgreSQL "ticketing" 
+- Tables principales : avion, ville, utilisateur, type_siege, vol, reservation, enfant
+- IMPORTANT : Le champ `prix_paye` dans `reservation` représente le prix de la réservation (pas un paiement effectué)
+
+APPLICATION WILDFLY - STRUCTURE :
+---------------------------------
+wildfly/
+├── src/
+│   ├── controllers/        # FrontOfficeController, BackOfficeController, LoginController
+│   ├── model/             # Reservation, Ville, Vol, etc.
+│   └── dbconnect/         # Connexion DB
+├── web/
+│   ├── *.jsp              # Pages JSP
+│   └── WEB-INF/
+└── lib/                   # sprint.jar
+
+FRAMEWORK SPRINT :
+-----------------
+Utilise des annotations personnalisées :
+- @Controller, @Url, @Get, @Post
+- @Auth("user"/"admin") pour l'authentification
+- @Param pour récupérer les paramètres
+
+CONTEXTE ACTUEL :
+----------------
+- L'application fonctionne avec authentification (admin/user)
+- Front office : recherche vols, réservations, exports PDF/CSV
+- Back office : gestion admin
+- Page `front_reservations.jsp` affiche la liste des réservations utilisateur
+- Système de paiement simple implémenté avec table `paiement`
+
+RÈGLES IMPORTANTES À RESPECTER :
+-------------------------------
+1. Respecter la structure existante du projet
+2. PAS de nouveaux contrôleurs, utiliser FrontOfficeController existant
+3. PAS de fichiers .bat (inutiles)
+4. Modifier les fichiers existants directement (pas de "_extended" ou "_updated")
+5. Le prix_paye est le prix de la réservation, pas un statut de paiement
+6. Garder la simplicité, pas de sur-ingénierie
+
+FONCTIONNALITÉS ACTUELLES :
+--------------------------
+- Authentification utilisateur/admin
+- Recherche et réservation de vols
+- Gestion des réservations utilisateur
+- Export PDF/CSV des réservations
+- Système de paiement simple (table paiement avec montant et date)
+- Bouton "Payer" sur les réservations non payées
+- Indicateur "Payé" sur les réservations payées
+
+UTILISATION DE CE CONTEXTE :
+---------------------------
+Copiez ce texte dans votre prompt en ajoutant votre demande spécifique à la fin.
+Exemple : "DEMANDE : Ajouter une fonctionnalité de [votre demande]"
