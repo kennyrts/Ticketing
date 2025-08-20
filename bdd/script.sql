@@ -155,3 +155,15 @@ INSERT INTO avion_type_siege (avion_id, type_siege_id, nombre_sieges) VALUES
     (3, 2, 220),
     (4, 1, 130),
     (4, 2, 230);
+
+-- Table pour les paiements
+CREATE TABLE paiement (
+    id SERIAL PRIMARY KEY,
+    reservation_id INTEGER REFERENCES reservation(id) ON DELETE CASCADE,
+    montant DECIMAL(10,2) NOT NULL,
+    date_paiement TIMESTAMP NOT NULL,
+    date_creation TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Index pour améliorer les performances
+CREATE INDEX idx_paiement_reservation_id ON paiement(reservation_id);

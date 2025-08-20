@@ -1,6 +1,7 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ page import="java.util.List" %>
 <%@ page import="model.Reservation" %>
+<%@ page import="model.Paiement" %>
 <%@ page import="java.text.SimpleDateFormat" %>
 <!DOCTYPE html>
 <html>
@@ -337,6 +338,39 @@
             cursor: not-allowed;
         }
         
+        .btn-payment {
+            background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%);
+            color: white;
+            box-shadow: 0 2px 8px rgba(33, 150, 243, 0.3);
+            font-weight: 600;
+        }
+        
+        .btn-payment:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(33, 150, 243, 0.4);
+        }
+        
+        .payment-status-indicator {
+            margin-bottom: 10px;
+        }
+        
+        .payment-validated {
+            display: inline-flex;
+            align-items: center;
+            padding: 8px 12px;
+            background: linear-gradient(135deg, #e8f5e8 0%, #f1f8e9 100%);
+            color: #2e7d32;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+            border: 1px solid #c8e6c9;
+        }
+        
+        .payment-validated span {
+            margin-right: 6px;
+            font-size: 14px;
+        }
+        
         .reservation-status {
             display: flex;
             align-items: center;
@@ -390,8 +424,23 @@
             <% 
             SimpleDateFormat sdf = new SimpleDateFormat("EEE, MMM d, yyyy HH:mm");
             List<Reservation> reservations = (List<Reservation>) request.getAttribute("reservations");
-            if (reservations != null && !reservations.isEmpty()) {
+            String success = (String) request.getAttribute("success");
+            String error = (String) request.getAttribute("error");
+            
+            if (success != null) {
             %>
+                <div style="background: #e8f5e8; color: #2e7d32; padding: 15px; border-radius: 5px; margin-bottom: 20px; border: 1px solid #c8e6c9;">
+                    <strong>✅ Succès:</strong> <%= success %>
+                </div>
+            <% } %>
+            
+            <% if (error != null) { %>
+                <div style="background: #ffebee; color: #c62828; padding: 15px; border-radius: 5px; margin-bottom: 20px; border: 1px solid #ffcdd2;">
+                    <strong>❌ Erreur:</strong> <%= error %>
+                </div>
+            <% } %>
+            
+            <% if (reservations != null && !reservations.isEmpty()) { %>
             <!-- Export buttons améliorés -->
             <div class="export-buttons">
                 <div class="export-info">
@@ -411,6 +460,13 @@
             </div>
             <%
                 for (Reservation res : reservations) {
+                    // Vérifier le statut de paiement
+                    boolean estPaye = false;
+                    try {
+                        estPaye = Paiement.reservationEstPayee(res.getId());
+                    } catch (Exception e) {
+                        estPaye = false;
+                    }
             %>
             <div class="reservation-card <%= res.isEstPromo() ? "promo" : "" %>">
                 <div class="flight-info">
@@ -460,6 +516,26 @@
                     
                     <!-- Boutons d'action restructurés -->
                     <div class="action-buttons">
+                        <!-- Vérification du statut de paiement -->
+                        <% if (!estPaye) { %>
+                        <!-- Bouton de paiement si pas encore payé -->
+                        <div class="payment-status-indicator">
+                            <a href="front_paiement_form?reservation_id=<%= res.getId() %>" 
+                               class="btn btn-payment">
+                                <span>💳</span>
+                                Payer
+                            </a>
+                        </div>
+                        <% } else { %>
+                        <!-- Indicateur de paiement validé -->
+                        <div class="payment-status-indicator">
+                            <span class="payment-validated">
+                                <span>✅</span>
+                                Payé
+                            </span>
+                        </div>
+                        <% } %>
+                        
                         <div class="btn-group">
                             <% if (res.isEstAnnulable()) { %>
                                 <form action="front_reservation_annuler" method="post" 

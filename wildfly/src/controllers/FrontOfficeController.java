@@ -23,6 +23,7 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.util.Base64;
 import model.Enfant;
+import model.Paiement;
 
 @Controller
 @Auth("user")
@@ -397,6 +398,113 @@ public class FrontOfficeController {
                 ex.printStackTrace();
             }
         }
+        return mv;
+    }
+
+    @Get
+    @Url("front_paiement_form")
+    public ModelView paiementForm(@Param(name = "reservation_id") String reservationId,
+                                 MySession session) {
+        ModelView mv = new ModelView();
+        try {
+            int userId = (int) session.get("id");
+            int resId = Integer.parseInt(reservationId);
+            
+            // Vérifier que la réservation appartient à l'utilisateur
+            List<Reservation> userReservations = Reservation.getByIdUtilisateur(userId);
+            Reservation reservation = null;
+            
+            for (Reservation res : userReservations) {
+                if (res.getId() == resId) {
+                    reservation = res;
+                    break;
+                }
+            }
+            
+            if (reservation == null) {
+                mv.setUrl("front_reservations");
+                mv.addObject("error", "Réservation non trouvée ou accès non autorisé");
+                return mv;
+            }
+            
+            // Vérifier si la réservation est déjà payée
+            if (Paiement.reservationEstPayee(resId)) {
+                mv.setUrl("front_reservations");
+                mv.addObject("error", "Cette réservation est déjà payée");
+                return mv;
+            }
+            
+            mv.setUrl("front_paiement_form.jsp");
+            mv.addObject("reservation", reservation);
+            
+        } catch (Exception e) {
+            mv.setUrl("front_reservations");
+            mv.addObject("error", "Erreur lors du chargement du formulaire de paiement: " + e.getMessage());
+        }
+        
+        return mv;
+    }
+
+    @Post
+    @Url("front_paiement_traiter")
+    public ModelView traiterPaiement(@Param(name = "reservation_id") String reservationId,
+                                   @Param(name = "montant") String montantStr,
+                                   @Param(name = "date_paiement") String datePaiementStr,
+                                   MySession session) {
+        ModelView mv = new ModelView();
+        try {
+            int userId = (int) session.get("id");
+            int resId = Integer.parseInt(reservationId);
+            double montant = Double.parseDouble(montantStr);
+            Timestamp datePaiement = Timestamp.valueOf(datePaiementStr.replace("T", " ") + ":00");
+            
+            // Vérifier que la réservation appartient à l'utilisateur
+            List<Reservation> userReservations = Reservation.getByIdUtilisateur(userId);
+            Reservation reservation = null;
+            
+            for (Reservation res : userReservations) {
+                if (res.getId() == resId) {
+                    reservation = res;
+                    break;
+                }
+            }
+            
+            if (reservation == null) {
+                mv.setUrl("front_reservations");
+                mv.addObject("error", "Réservation non trouvée ou accès non autorisé");
+                return mv;
+            }
+            
+            // Vérifier si la réservation est déjà payée
+            if (Paiement.reservationEstPayee(resId)) {
+                mv.setUrl("front_reservations");
+                mv.addObject("error", "Cette réservation est déjà payée");
+                return mv;
+            }
+            
+            // Insérer le paiement
+            Paiement.insert(resId, montant, datePaiement);
+            
+            mv.setUrl("front_reservations");
+            mv.addObject("success", "Paiement enregistré avec succès!");
+            
+        } catch (Exception e) {
+            mv.setUrl("front_paiement_form");
+            mv.addObject("error", "Erreur lors du traitement du paiement: " + e.getMessage());
+            try {
+                int resId = Integer.parseInt(reservationId);
+                List<Reservation> userReservations = Reservation.getByIdUtilisateur((int) session.get("id"));
+                for (Reservation res : userReservations) {
+                    if (res.getId() == resId) {
+                        mv.addObject("reservation", res);
+                        break;
+                    }
+                }
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
+        }
+        
         return mv;
     }
 } 
